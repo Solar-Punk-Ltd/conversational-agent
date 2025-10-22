@@ -16,7 +16,7 @@ import {
   HederaAgentKit,
   TokenUsageCallbackHandler,
 } from 'hedera-agent-kit';
-import type { TokenUsage, CostCalculation } from 'hedera-agent-kit';
+import type { TokenUsage, CostCalculation, BasePlugin } from 'hedera-agent-kit';
 import {
   BaseAgent,
   type ConversationContext,
@@ -24,6 +24,7 @@ import {
   type OperationalMode,
   type UsageStats,
 } from '../base-agent';
+import { SwarmPlugin } from '../plugins/community/swarm';
 import { MCPClientManager } from '../mcp/mcp-client-manager';
 import { convertMCPToolToLangChain } from '../mcp/adapters/langchain';
 import { SmartMemoryManager } from '../memory/smart-memory-manager';
@@ -1307,7 +1308,9 @@ export class LangChainAgent extends BaseAgent {
   private async createAgentKit(): Promise<HederaAgentKit> {
     const corePlugins = getAllHederaCorePlugins();
     const extensionPlugins = this.config.extensions?.plugins || [];
-    const plugins = [...corePlugins, ...extensionPlugins];
+    const swarmPlugin = new SwarmPlugin();
+    const communityPlugins: BasePlugin[] = [swarmPlugin];
+    const plugins = [...corePlugins, ...communityPlugins, ...extensionPlugins];
 
     const operationalMode =
       this.config.execution?.operationalMode || 'returnBytes';
