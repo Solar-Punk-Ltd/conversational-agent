@@ -27,6 +27,7 @@ import {
 } from '@hashgraphonline/standards-agent-kit';
 import { HbarPlugin } from './plugins/hbar/HbarPlugin';
 import { WebBrowserPlugin } from './plugins/web-browser/WebBrowserPlugin';
+import { SwarmPlugin } from './plugins/community/swarm/SwarmPlugin';
 import { OpenConvaiState } from '@hashgraphonline/standards-agent-kit';
 import type { IStateManager } from '@hashgraphonline/standards-agent-kit';
 import { getSystemMessage } from './config/system-message';
@@ -136,6 +137,7 @@ export class ConversationalAgent {
   public inscribePlugin: InscribePlugin;
   public hbarPlugin: HbarPlugin;
   public webBrowserPlugin: WebBrowserPlugin;
+  public swarmPlugin: SwarmPlugin;
   public stateManager: IStateManager;
   private options: ConversationalAgentOptions;
   public logger: Logger;
@@ -154,6 +156,7 @@ export class ConversationalAgent {
     this.inscribePlugin = new InscribePlugin();
     this.hbarPlugin = new HbarPlugin();
     this.webBrowserPlugin = new WebBrowserPlugin();
+    this.swarmPlugin = new SwarmPlugin();
     this.logger = new Logger({
       module: 'ConversationalAgent',
       silent: options.disableLogging || false,
@@ -734,7 +737,11 @@ export class ConversationalAgent {
    * @returns Array of plugins to initialize with the agent
    */
   private preparePlugins(): BasePlugin[] {
-    const { additionalPlugins = [], enabledPlugins, disabledPlugins } = this.options;
+    const {
+      additionalPlugins = [],
+      enabledPlugins,
+      disabledPlugins,
+    } = this.options;
 
     const standardPlugins: BasePlugin[] = [
       this.hcs10Plugin,
@@ -744,8 +751,10 @@ export class ConversationalAgent {
     ];
     standardPlugins.push(this.webBrowserPlugin);
 
+    const communityPlugins: BasePlugin[] = [this.swarmPlugin];
+
     const corePlugins = getAllHederaCorePlugins();
-    let pluginPool = [...standardPlugins, ...corePlugins];
+    let pluginPool = [...standardPlugins, ...communityPlugins, ...corePlugins];
 
     if (enabledPlugins) {
       const enabledSet = new Set(enabledPlugins);
@@ -757,9 +766,12 @@ export class ConversationalAgent {
       pluginPool = pluginPool.filter((plugin) => !disabledSet.has(plugin.id));
     }
 
-    const additional = disabledPlugins && disabledPlugins.length > 0
-      ? additionalPlugins.filter((plugin) => !disabledPlugins.includes(plugin.id))
-      : additionalPlugins;
+    const additional =
+      disabledPlugins && disabledPlugins.length > 0
+        ? additionalPlugins.filter(
+            (plugin) => !disabledPlugins.includes(plugin.id)
+          )
+        : additionalPlugins;
 
     return [...pluginPool, ...additional];
   }
@@ -1061,7 +1073,7 @@ export class ConversationalAgent {
       }
       if (typeof response === 'string') {
         const match = response.match(
-          /transaction[\s\w]*ID[\s:"]*([0-9a-fA-F@._-]+)/i
+          /transaction[\s\w]*ID[\s:']*([0-9a-fA-F@._-]+)/i
         );
         return match ? match[1] : undefined;
       }
