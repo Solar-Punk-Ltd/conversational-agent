@@ -1,5 +1,8 @@
 import { Bee, PostageBatch } from "@ethersphere/bee-js";
 import { PostageBatchCurated, PostageBatchSummary } from "./model";
+import { SwarmConfig } from "./config";
+import { GenericPluginContext } from "hedera-agent-kit";
+import { DEFAULT_GATEWAY_BATCH_ID, NOT_FOUND_STATUS } from "./constants";
 
 export interface ToolResponse {
   [x: string]: unknown;
@@ -81,53 +84,57 @@ export const runWithTimeout = async <T>(
 
 export const getUploadPostageBatchId = async (
   argsPostageBatchId: string | undefined,
-  bee: Bee
+  bee: Bee,
+  config: SwarmConfig,
+  logger: GenericPluginContext['logger']
 ): Promise<string> => {
-  return "7de0486441b5a3b4b4272154cb3853767ed45ef262edda10064d3c0a444caa10";
-  //   let postageBatchId = argsPostageBatchId;
-  //   const autoAssignStamp = config.bee.autoAssignStamp;
-  //   let maxRemainingSize = 0;
+    let postageBatchId = argsPostageBatchId;
+    const autoAssignStamp = config.autoAssignStamp;
+    let maxRemainingSize = 0;
 
-  //   if (!postageBatchId && !autoAssignStamp) {
-  //     throw new McpError(
-  //       ErrorCode.InvalidRequest,
-  //       "No postageBatchId was provided. Please repeat the prompt and also specify the usable postage batch id."
-  //     );
-  //   } else if (!postageBatchId) {
-  //     try {
-  //       const rawPostageBatches = await bee.getPostageBatches();
+    if (!postageBatchId && !autoAssignStamp) {
+      logger.error(
+        'No postageBatchId was provided.'
+      );
 
-  //       rawPostageBatches.forEach((batch) => {
-  //         if (!batch.usable) {
-  //           return;
-  //         }
+      return 'No postageBatchId was provided. Please repeat the prompt and also specify the usable postage batch id.';
+    } else if (!postageBatchId) {
+      try {
+        const rawPostageBatches = await bee.getPostageBatches();
 
-  //         const remainingSize = batch.remainingSize.toBytes();
+        rawPostageBatches.forEach((batch) => {
+          if (!batch.usable) {
+            return;
+          }
 
-  //         if (remainingSize > maxRemainingSize) {
-  //           maxRemainingSize = remainingSize;
-  //           postageBatchId = batch.batchID.toHex();
-  //         }
-  //       });
-  //     } catch (error) {
-  //       if (errorHasStatus(error, NOT_FOUND_STATUS)) {
-  //         postageBatchId = DEFAULT_GATEWAY_BATCH_ID;
-  //       } else {
-  //         throw new McpError(
-  //           ErrorCode.InvalidParams,
-  //           "Retrieval of postage batches failed."
-  //         );
-  //       }
-  //     }
-  //   }
+          const remainingSize = batch.remainingSize.toBytes();
 
-  //   if (!postageBatchId) {
-  //     throw new McpError(
-  //       ErrorCode.InvalidRequest,
-  //       "There is no usable postage batch with capacity."
-  //     );
-  //   }
-  //   return postageBatchId!;
+          if (remainingSize > maxRemainingSize) {
+            maxRemainingSize = remainingSize;
+            postageBatchId = batch.batchID.toHex();
+          }
+        });
+      } catch (error) {
+        if (errorHasStatus(error, NOT_FOUND_STATUS)) {
+          postageBatchId = DEFAULT_GATEWAY_BATCH_ID;
+        } else {
+          logger.error(
+            'Retrieval of postage batches failed.'
+          );
+
+          return 'Retrieval of postage batches failed.';
+        }
+      }
+    }
+
+    if (!postageBatchId) {
+      logger.error(
+        'There is no usable postage batch with capacity.'
+      );
+
+      return 'There is no usable postage batch with capacity.';
+    }
+    return postageBatchId!;
 };
 
 const dateUnits: Record<string, number | undefined> = {

@@ -4,6 +4,7 @@ import { z } from "zod";
 import crypto from "crypto";
 import { getResponseWithStructuredContent, hexToBytes, ToolResponse } from "../utils";
 import { BaseHederaQueryTool, GenericPluginContext, HederaAgentKit } from "hedera-agent-kit";
+import { SwarmConfig } from "../config";
 
 const ReadFeedSchema = z.object({
   memoryTopic: z.string(),
@@ -12,19 +13,25 @@ const ReadFeedSchema = z.object({
 
 export class ReadFeedTool extends BaseHederaQueryTool<typeof ReadFeedSchema> {
   name = "swarm-read-feed";
-  description = "Retrieve the latest data from the feed of a given topic.";
+  description = `Retrieve the latest data from the feed of a given topic.
+    memoryTopic: Feed topic.
+    owner: when accessing external memory or feed, ethereum address of the owner must be set.
+  `;
   namespace = "swarm";
   specificInputSchema = ReadFeedSchema;
   bee: Bee;
-
+  config: SwarmConfig;
+      
   constructor(params: {
     hederaKit: HederaAgentKit;
+    config: SwarmConfig;
     logger?: GenericPluginContext['logger'];
     bee: Bee;
   }) {
-    const { bee, ...rest } = params;
+    const { bee, config, ...rest } = params;
     super(rest);
     this.bee = bee;
+    this.config = config;
   }
 
   protected async executeQuery(
@@ -33,14 +40,19 @@ export class ReadFeedTool extends BaseHederaQueryTool<typeof ReadFeedSchema> {
    const { memoryTopic, owner } = input;
 
     if (!memoryTopic) {
-      return "Missing required parameter: memoryTopic";
+      this.logger.error(
+        'Missing required parameter: memoryTopic.'
+      );
+
+      return 'Missing required parameter: memoryTopic.';
     }
 
     this.logger.info(`[API] Downloading text from Swarm feed with topic: ${memoryTopic}.`);
 
-    if (!process.env.SWARM_BEE_FEED_PK) {
-      this.logger.error("Feed private key not configured. Set BEE_FEED_PK environment variable.");
-      return "Feed private key not configured. Set BEE_FEED_PK environment variable.";
+    if (!this.config.beeFeedPK) {
+      this.logger.error('Feed private key not configured.');
+
+      return 'Feed private key not configured.';
     }
 
     // Process topic - if not a hex string, hash it
@@ -61,7 +73,7 @@ export class ReadFeedTool extends BaseHederaQueryTool<typeof ReadFeedSchema> {
 
     let feedOwner = owner;
     if (!feedOwner) {
-      const feedPrivateKey = hexToBytes(process.env.SWARM_BEE_FEED_PK);
+      const feedPrivateKey = hexToBytes(this.config.beeFeedPK);
       const signer = new Wallet(feedPrivateKey);
       feedOwner = signer.getAddressString().slice(2);
     } else {
@@ -69,7 +81,9 @@ export class ReadFeedTool extends BaseHederaQueryTool<typeof ReadFeedSchema> {
         feedOwner = feedOwner.slice(2);
       }
       if (feedOwner.length !== 40) {
-        return "Owner must be a valid Ethereum address";
+        this.logger.error('Owner must be a valid Ethereum address.');
+
+        return 'Owner must be a valid Ethereum address.';
       }
     }
 

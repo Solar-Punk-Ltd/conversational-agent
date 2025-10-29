@@ -17,6 +17,7 @@ import {
   ToolResponse,
 } from "../utils";
 import { GATEWAY_STAMP_ERROR_MESSAGE, NOT_FOUND_STATUS } from "../constants";
+import { SwarmConfig } from "../config";
 
 const GetPostageStampSchema = z.object({
   postageBatchId: z.string(),
@@ -24,19 +25,24 @@ const GetPostageStampSchema = z.object({
 
 export class GetPostageStampTool extends BaseHederaQueryTool<typeof GetPostageStampSchema> {
   name = "swarm-get-postage-stamp";
-  description = "Get a specific postage stamp based on postageBatchId.";
+  description = `Get a specific postage stamp based on postageBatchId.
+    postageBatchId: The id of the stamp which is requested.
+  `;
   namespace = "swarm";
   specificInputSchema = GetPostageStampSchema;
   bee: Bee;
-
+  config: SwarmConfig;
+      
   constructor(params: {
     hederaKit: HederaAgentKit;
+    config: SwarmConfig;
     logger?: GenericPluginContext['logger'];
     bee: Bee;
   }) {
-    const { bee, ...rest } = params;
+    const { bee, config, ...rest } = params;
     super(rest);
     this.bee = bee;
+    this.config = config;
   }
 
   protected async executeQuery(
@@ -44,7 +50,11 @@ export class GetPostageStampTool extends BaseHederaQueryTool<typeof GetPostageSt
   ): Promise<ToolResponse | string> {
     const { postageBatchId } = input;
     if (!postageBatchId) {
-      return "Missing required parameter: postageBatchId";
+      this.logger.error(
+        'Missing required parameter: postageBatchId.'
+      );
+
+      return "Missing required parameter: postageBatchId.";
     }
 
     let rawPostageBatch;
@@ -52,11 +62,18 @@ export class GetPostageStampTool extends BaseHederaQueryTool<typeof GetPostageSt
     try {
       rawPostageBatch = await this.bee.getPostageBatch(postageBatchId);
     } catch (error) {
+      let errorMessage = 'Retrieval of postage batch failed.';
+    
       if (errorHasStatus(error, NOT_FOUND_STATUS)) {
-        return GATEWAY_STAMP_ERROR_MESSAGE;
-      } else {
-        return "Retrieval of postage batch failed.";
+        errorMessage = GATEWAY_STAMP_ERROR_MESSAGE;
       }
+
+      this.logger.error(
+        errorMessage,
+        error
+      );
+
+      return errorMessage;
     }
 
     const batch: PostageBatchCurated = {

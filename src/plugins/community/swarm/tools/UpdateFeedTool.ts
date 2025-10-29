@@ -16,6 +16,7 @@ import {
 } from "../utils";
 import { BAD_REQUEST_STATUS } from "../constants";
 import { Wallet } from "@ethereumjs/wallet";
+import { SwarmConfig } from "../config";
 
 const UpdateFeedSchema = z.object({
   data: z.string(),
@@ -25,20 +26,25 @@ const UpdateFeedSchema = z.object({
 
 export class UpdateFeedTool extends BaseHederaQueryTool<typeof UpdateFeedSchema> {
   name = "swarm-update-feed";
-  description = `Update the feed of a given topic with new data. Optional options (ignore if they are not requested):
+  description = `Update the feed of a given topic with new data.
+    data: Arbitrary string to upload.
+    memoryTopic: If provided, uploads the data to a feed with this topic. It is the label of the memory that can be used later to retrieve the data instead of its content hash. If not a hex string, it will be hashed to create a feed topic.
     postageBatchId: The postage stamp batch ID which will be used to perform the upload, if it is provided.`;
   namespace = "swarm";
   specificInputSchema = UpdateFeedSchema;
   bee: Bee;
-  
+  config: SwarmConfig;
+        
   constructor(params: {
     hederaKit: HederaAgentKit;
+    config: SwarmConfig;
     logger?: GenericPluginContext['logger'];
     bee: Bee;
   }) {
-    const { bee, ...rest } = params;
+    const { bee, config, ...rest } = params;
     super(rest);
     this.bee = bee;
+    this.config = config;
   }
   
   protected async executeQuery(
@@ -47,22 +53,33 @@ export class UpdateFeedTool extends BaseHederaQueryTool<typeof UpdateFeedSchema>
     const { data, memoryTopic, postageBatchId: inputPostageBatchId  } = input;
     
      if (!data) {
-      return "Missing required parameter: data.";
+      this.logger.error(
+        'Missing required parameter: data.'
+      );
+
+      return 'Missing required parameter: data.';
     } else if (!memoryTopic) {
-      return "Missing required parameter: topic.";
+      this.logger.error(
+        'Missing required parameter: topic.'
+      );
+
+      return 'Missing required parameter: topic.';
     }
 
     const postageBatchId = await getUploadPostageBatchId(
       inputPostageBatchId,
-      this.bee
+      this.bee,
+      this.config,
+      this.logger
     );
 
     const binaryData = Buffer.from(data);
 
     // Feed upload if memoryTopic is specified
-    if (!process.env.SWARM_BEE_FEED_PK) {
-      this.logger.error("Feed private key not configured. Set BEE_FEED_PK environment variable.");
-      return "Feed private key not configured. Set BEE_FEED_PK environment variable.";
+    if (!this.config.beeFeedPK) {
+      this.logger.error('Feed private key not configured.');
+
+      return 'Feed private key not configured.';
     }
 
     // Process topic - if not a hex string, hash it
@@ -84,7 +101,7 @@ export class UpdateFeedTool extends BaseHederaQueryTool<typeof UpdateFeedSchema>
     // Convert topic string to bytes
     const topicBytes = hexToBytes(topic);
 
-    const feedPrivateKey = hexToBytes(process.env.SWARM_BEE_FEED_PK);
+    const feedPrivateKey = hexToBytes(this.config.beeFeedPK);
     const signer = new Wallet(feedPrivateKey);
     const owner = signer.getAddressString().slice(2);
 
@@ -95,11 +112,18 @@ export class UpdateFeedTool extends BaseHederaQueryTool<typeof UpdateFeedSchema>
 
       result = await feedWriter.uploadPayload(postageBatchId!, binaryData);
     } catch (error) {
+      let errorMessage = 'Unable to update feed.';
+
       if (errorHasStatus(error, BAD_REQUEST_STATUS)) {
-        return getErrorMessage(error);
-      } else {
-        return "Unable to update feed.";
+        errorMessage = getErrorMessage(error);
       }
+
+      this.logger.error(
+        errorMessage,
+        error
+      );
+      
+      return errorMessage;
     }
 
     const reference = result.reference.toString();
@@ -109,7 +133,7 @@ export class UpdateFeedTool extends BaseHederaQueryTool<typeof UpdateFeedSchema>
       topicString: memoryTopic,
       topic: topic,
       feedUrl: `${this.bee.url}/feeds/${owner}/${topic}`,
-      message: "Data successfully uploaded to Swarm and linked to feed.",
+      message: 'Data successfully uploaded to Swarm and linked to feed.',
     });
   }
 }

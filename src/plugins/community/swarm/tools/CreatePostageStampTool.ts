@@ -13,6 +13,7 @@ import {
   ToolResponse,
 } from "../utils";
 import { BAD_REQUEST_STATUS, CALL_TIMEOUT, GATEWAY_STAMP_ERROR_MESSAGE, NOT_FOUND_STATUS, POSTAGE_CREATE_TIMEOUT_MESSAGE } from "../constants";
+import { SwarmConfig } from "../config";
 
 const CreatePostageStampSchema = z.object({
   size: z.number(),
@@ -22,19 +23,27 @@ const CreatePostageStampSchema = z.object({
 
 export class CreatePostageStampTool extends BaseHederaQueryTool<typeof CreatePostageStampSchema> {
   name = "swarm-create-postage-stamp";
-  description = "Buy postage stamp based on size in megabytes and duration.";
+  description = `
+    Buy postage stamp based on size in megabytes and duration.
+    size: The storage size in MB (Megabytes). These other size units convert like this to MB: 1 byte = 0.000001 MB, 1  KB = 0.001 MB, 1GB= 1000MB.
+    duration: Duration for which the data should be stored. Time to live of the postage stamp, e.g. 1d - 1 day, 1w - 1 week, 1month - 1 month.
+    label: Sets label for the postage batch (omit if the user didn't ask for one). Do not set a label with with specific capacity values because they can get misleading.
+  `;
   namespace = "swarm";
   specificInputSchema = CreatePostageStampSchema;
   bee: Bee;
+  config: SwarmConfig;
   
   constructor(params: {
     hederaKit: HederaAgentKit;
+    config: SwarmConfig;
     logger?: GenericPluginContext['logger'];
     bee: Bee;
   }) {
-    const { bee, ...rest } = params;
+    const { bee, config, ...rest } = params;
     super(rest);
     this.bee = bee;
+    this.config = config;
   }
   
   protected async executeQuery(
@@ -43,9 +52,17 @@ export class CreatePostageStampTool extends BaseHederaQueryTool<typeof CreatePos
     const { size, duration, label } = input;
 
     if (!size) {
-      return "Missing required parameter: size.";
+      this.logger.error(
+        'Missing required parameter: size.'
+      );
+
+      return 'Missing required parameter: size.';
     } else if (!duration) {
-      return "Missing required parameter: duration.";
+      this.logger.error(
+        'Missing required parameter: duration.'
+      );
+
+      return 'Missing required parameter: duration.';
     }
 
     let durationMs;
@@ -53,7 +70,10 @@ export class CreatePostageStampTool extends BaseHederaQueryTool<typeof CreatePos
     try {
       durationMs = makeDate(duration);
     } catch (makeDateError) {
-      return "Invalid parameter: duration";
+      this.logger.error(
+        'Invalid parameter: duration.'
+      );
+      return 'Invalid parameter: duration.';
     }
 
     let buyStorageResponse: BatchId;
@@ -63,7 +83,7 @@ export class CreatePostageStampTool extends BaseHederaQueryTool<typeof CreatePos
         Size.fromMegabytes(size),
         Duration.fromMilliseconds(durationMs),
         {
-          label: label || "",
+          label: label || '',
         }
       );
       const [response, hasTimedOut] = await runWithTimeout(
@@ -75,7 +95,7 @@ export class CreatePostageStampTool extends BaseHederaQueryTool<typeof CreatePos
         return JSON.stringify({
           content: [
             {
-              type: "text",
+              type: 'text',
               text: POSTAGE_CREATE_TIMEOUT_MESSAGE,
             },
           ],
@@ -84,19 +104,26 @@ export class CreatePostageStampTool extends BaseHederaQueryTool<typeof CreatePos
 
       buyStorageResponse = response as BatchId;
     } catch (error) {
+      let errorMessage = 'Unable to buy storage.';
+
       if (errorHasStatus(error, NOT_FOUND_STATUS)) {
-        return GATEWAY_STAMP_ERROR_MESSAGE;
+        errorMessage = GATEWAY_STAMP_ERROR_MESSAGE;
       } else if (errorHasStatus(error, BAD_REQUEST_STATUS)) {
-        return getErrorMessage(error);
-      } else {
-        return "Unable to buy storage.";
+        errorMessage = getErrorMessage(error);
       }
+
+      this.logger.error(
+        errorMessage,
+        error
+      );
+
+      return errorMessage;
     }
 
     return {
       content: [
         {
-          type: "text",
+          type: 'text',
           text: `Postage batch ID: ${buyStorageResponse.toHex()}`,
         },
       ],

@@ -1308,9 +1308,7 @@ export class LangChainAgent extends BaseAgent {
   private async createAgentKit(): Promise<HederaAgentKit> {
     const corePlugins = getAllHederaCorePlugins();
     const extensionPlugins = this.config.extensions?.plugins || [];
-    const swarmPlugin = new SwarmPlugin();
-    const communityPlugins: BasePlugin[] = [swarmPlugin];
-    const plugins = [...corePlugins, ...communityPlugins, ...extensionPlugins];
+    const plugins = [...corePlugins, ...extensionPlugins];
 
     const operationalMode =
       this.config.execution?.operationalMode || 'returnBytes';

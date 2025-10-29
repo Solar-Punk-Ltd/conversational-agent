@@ -14,7 +14,8 @@ import {
   getUploadPostageBatchId,
   ToolResponse,
 } from "../utils";
-import { BAD_REQUEST_STATUS, DEFERRED_UPLOAD_SIZE_THRESHOLD_MB, GATEWAY_TAG_ERROR_MESSAGE, NOT_FOUND_STATUS } from "../constants";
+import { BAD_REQUEST_STATUS, DEFAULT_DEFERRED_UPLOAD_SIZE_THRESHOLD_MB, GATEWAY_TAG_ERROR_MESSAGE, NOT_FOUND_STATUS } from "../constants";
+import { SwarmConfig } from "../config";
 
 const UploadFileSchema = z.object({
   data: z.string(),
@@ -25,22 +26,26 @@ const UploadFileSchema = z.object({
 
 export class UploadFileTool extends BaseHederaQueryTool<typeof UploadFileSchema> {
   name = "swarm-upload-file";
-  description = `Upload a file to Swarm. Optional options (ignore if they are not requested): 
-            isPath: wether the data parameter is a path.
-            redundancyLevel: redundancy level for fault tolerance. Optional, value is 0 if not requested.
-            postageBatchId: The postage stamp batch ID which will be used to perform the upload, if it is provided.`;
+  description = `Upload a file to Swarm.
+    data: base64 encoded file content or file path.
+    isPath: Wether the data parameter is a path.
+    redundancyLevel: Redundancy level for fault tolerance (higher values provide better fault tolerance but increase storage overhead). 0 - none, 1 - medium, 2 - strong, 3 - insane, 4 - paranoid.
+    postageBatchId: The postage stamp batch ID which will be used to perform the upload, if it is provided.`;
   namespace = "swarm";
   specificInputSchema = UploadFileSchema;
   bee: Bee;
-  
+  config: SwarmConfig;
+            
   constructor(params: {
     hederaKit: HederaAgentKit;
+    config: SwarmConfig;
     logger?: GenericPluginContext['logger'];
     bee: Bee;
   }) {
-    const { bee, ...rest } = params;
+    const { bee, config, ...rest } = params;
     super(rest);
     this.bee = bee;
+    this.config = config;
   }
   
   protected async executeQuery(
@@ -49,12 +54,18 @@ export class UploadFileTool extends BaseHederaQueryTool<typeof UploadFileSchema>
     const { data, isPath, redundancyLevel: inputRedundancyLevel, postageBatchId: inputPostageBatchId  } = input;
 
     if (!data) {
-      return "Missing required parameter: data.";
+      this.logger.error(
+        'Missing required parameter: data.'
+      );
+
+      return 'Missing required parameter: data.';
     }
 
     const postageBatchId = await getUploadPostageBatchId(
       inputPostageBatchId,
-      this.bee
+      this.bee,
+      this.config,
+      this.logger
     );
 
     let binaryData: Buffer;
@@ -70,6 +81,11 @@ export class UploadFileTool extends BaseHederaQueryTool<typeof UploadFileSchema>
       try {
         binaryData = await promisify(fs.readFile)(data);
       } catch (fileError) {
+        this.logger.error(
+          `Unable to read file at path: ${data}.`,
+          fileError
+        );
+
         return `Unable to read file at path: ${data}.`;
       }
 
@@ -80,8 +96,8 @@ export class UploadFileTool extends BaseHederaQueryTool<typeof UploadFileSchema>
 
     const redundancyLevel = inputRedundancyLevel;
     const options: FileUploadOptions = {};
-    const deferredUploadSizeThreshold = Number(process.env.DEFERRED_UPLOAD_SIZE_THRESHOLD_MB) ||
-      DEFERRED_UPLOAD_SIZE_THRESHOLD_MB;
+    const deferredUploadSizeThreshold = Number(this.config.deferredUploadSizeThresholdMB) ||
+      DEFAULT_DEFERRED_UPLOAD_SIZE_THRESHOLD_MB;
     const deferred =
       binaryData.length > deferredUploadSizeThreshold * 1024 * 1024;
     options.deferred = deferred;
@@ -101,7 +117,12 @@ export class UploadFileTool extends BaseHederaQueryTool<typeof UploadFileSchema>
           "File upload started in deferred mode. Use query_upload_progress to track progress.";
       } catch (error) {
         if (errorHasStatus(error, NOT_FOUND_STATUS)) {
-          console.log(GATEWAY_TAG_ERROR_MESSAGE);
+          this.logger.error(
+            GATEWAY_TAG_ERROR_MESSAGE,
+            error
+          );
+
+          return GATEWAY_TAG_ERROR_MESSAGE;
         }
       }
     }
@@ -112,11 +133,18 @@ export class UploadFileTool extends BaseHederaQueryTool<typeof UploadFileSchema>
       // Start the deferred upload
       result = await this.bee.uploadFile(postageBatchId, binaryData, name, options);
     } catch (error) {
+      let errorMessage = 'Unable to upload file.';
+
       if (errorHasStatus(error, BAD_REQUEST_STATUS)) {
-        return getErrorMessage(error);
-      } else {
-        return "Unable to upload file.";
+        errorMessage = getErrorMessage(error);
       }
+
+      this.logger.error(
+        errorMessage,
+        error
+      );
+      
+      return errorMessage;
     }
 
     return JSON.stringify(getResponseWithStructuredContent({

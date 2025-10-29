@@ -17,6 +17,7 @@ import { ReadFeedTool } from "./tools/ReadFeedTool";
 import { UpdateFeedTool } from "./tools/UpdateFeedTool";
 import { UploadFileTool } from "./tools/UploadFileTool";
 import { UploadFolderTool } from "./tools/UploadFolderTool";
+import { SwarmConfig } from "./config";
 
 export class SwarmPlugin extends BasePlugin<GenericPluginContext> {
   id = "swarm";
@@ -27,9 +28,21 @@ export class SwarmPlugin extends BasePlugin<GenericPluginContext> {
   author = "Solar Punk";
   namespace = "swarm";
 
+  private config: SwarmConfig | null;
   private tools: HederaTool[] = [];
 
+  constructor(
+    config?: SwarmConfig
+  ) {
+    super();
+    this.config = config || null;
+    console.log("=====SwarmPlugin.constructor=====");
+    console.log("=====config=====");
+    console.log(config);
+  }
+
   override async initialize(context: GenericPluginContext): Promise<void> {
+    
     await super.initialize(context);
 
     const hederaKit = context.config.hederaKit as HederaAgentKit | undefined;
@@ -41,81 +54,100 @@ export class SwarmPlugin extends BasePlugin<GenericPluginContext> {
       this.tools = [];
       return;
     }
- 
-    const beeURL =
-      process.env.SWARM_BEE_API_URL || "https://api.gateway.ethswarm.org";
-
-    const bee = new Bee(beeURL);
     
+    if (!this.config) {
+      this.context.logger.warn(
+        'SwarmPlugin skipped because Swarm config was not present.'
+      );
+      this.tools = [];
+      return;
+    }
+    
+    const beeURL = this.config.beeApiUrl;
+    
+    const bee = new Bee(beeURL);
+
     const createPostageStampTool = new CreatePostageStampTool({
       hederaKit,
       bee,
+      config: this.config,
       logger: this.context.logger,
     });
 
     const downloadDataTool = new DownloadDataTool({
       hederaKit,
       bee,
+      config: this.config,
       logger: this.context.logger,
     });
     
     const downloadFilesTool = new DownloadFilesTool({
       hederaKit,
       bee,
+      config: this.config,
       logger: this.context.logger,
     });
     
     const extendPostageStampTool = new ExtendPostageStampTool({
       hederaKit,
       bee,
+      config: this.config,
       logger: this.context.logger,
     });
 
     const getPostageStampsTool = new GetPostageStampTool({
       hederaKit,
       bee,
+      config: this.config,
       logger: this.context.logger,
     });
     
     const listPostageStampsTool = new ListPostageStampsTool({
       hederaKit,
       bee,
+      config: this.config,
       logger: this.context.logger,
     });
     
     const queryUploadProgressTool = new QueryUploadProgressTool({
       hederaKit,
       bee,
+      config: this.config,
       logger: this.context.logger,
     });
     
     const readFeedTool = new ReadFeedTool({
       hederaKit,
       bee,
+      config: this.config,
       logger: this.context.logger,
     });
     
     const updateFeedTool = new UpdateFeedTool({
       hederaKit,
       bee,
+      config: this.config,
       logger: this.context.logger,
     });
     
     const uploadDataTool = new UploadDataTool({
       hederaKit,
       bee,
+      config: this.config,
       logger: this.context.logger,
     });
     
     const uploadFileTool = new UploadFileTool({
       hederaKit,
       bee,
+      config: this.config,
       logger: this.context.logger,
     });
     
     const uploadFolderTool = new UploadFolderTool({
       hederaKit,
       bee,
+      config: this.config,
       logger: this.context.logger,
     });
     

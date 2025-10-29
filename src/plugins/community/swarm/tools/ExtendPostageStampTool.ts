@@ -13,6 +13,7 @@ import {
   ToolResponse,
 } from "../utils";
 import { BAD_REQUEST_STATUS, GATEWAY_STAMP_ERROR_MESSAGE, NOT_FOUND_STATUS } from "../constants";
+import { SwarmConfig } from "../config";
 
 const ExtendPostageStampSchema = z.object({
   postageBatchId: z.string(),
@@ -22,19 +23,26 @@ const ExtendPostageStampSchema = z.object({
 
 export class ExtendPostageStampTool extends BaseHederaQueryTool<typeof ExtendPostageStampSchema> {
   name = "swarm-extend-postage-stamp";
-  description = "Increase the duration (relative to current duration) or size (in megabytes) of a postage stamp.";
+  description = `Increase the duration (relative to current duration) or size (in megabytes) of a postage stamp.
+    postageBatchId: The id of the batch for which extend is performed.
+    size: The storage size in MB (Megabytes). These other size units convert like this to MB: 1 byte = 0.000001 MB, 1  KB = 0.001 MB, 1GB= 1000MB.
+    duration: Duration for which the data should be stored. Time to live of the postage stamp, e.g. 1d - 1 day, 1w - 1 week, 1month - 1 month.
+  `;
   namespace = "swarm";
   specificInputSchema = ExtendPostageStampSchema;
   bee: Bee;
-  
+  config: SwarmConfig;
+    
   constructor(params: {
     hederaKit: HederaAgentKit;
+    config: SwarmConfig;
     logger?: GenericPluginContext['logger'];
     bee: Bee;
   }) {
-    const { bee, ...rest } = params;
+    const { bee, config, ...rest } = params;
     super(rest);
     this.bee = bee;
+    this.config = config;
   }
   
   protected async executeQuery(
@@ -43,9 +51,17 @@ export class ExtendPostageStampTool extends BaseHederaQueryTool<typeof ExtendPos
     const { postageBatchId, duration, size } = input;
 
     if (!postageBatchId) {
-      return "Missing required parameter: postageBatchId";
+      this.logger.error(
+        'Missing required parameter: postageBatchId.'
+      );
+
+      return 'Missing required parameter: postageBatchId.';
     } else if (!duration && !size) {
-      return "You need at least one parameter from duration and size.";
+      this.logger.error(
+        'You need at least one parameter from duration and size.'
+      );
+
+      return 'You need at least one parameter from duration and size.';
     }
 
     const extendSize = !!size ? Size.fromMegabytes(size) : Size.fromBytes(1);
@@ -56,7 +72,11 @@ export class ExtendPostageStampTool extends BaseHederaQueryTool<typeof ExtendPos
         extendDuration = Duration.fromMilliseconds(makeDate(duration));
       }
     } catch (makeDateError) {
-      return "Invalid parameter: duration";
+      this.logger.error(
+        'Invalid parameter: duration.'
+      );
+
+      return 'Invalid parameter: duration.';
     }
 
     let extendStorageResponse;
@@ -68,13 +88,20 @@ export class ExtendPostageStampTool extends BaseHederaQueryTool<typeof ExtendPos
         extendDuration
       );
     } catch (error) {
+      let errorMessage = 'Extend failed.';
+
       if (errorHasStatus(error, NOT_FOUND_STATUS)) {
-        return GATEWAY_STAMP_ERROR_MESSAGE;
+        errorMessage = GATEWAY_STAMP_ERROR_MESSAGE;
       } else if (errorHasStatus(error, BAD_REQUEST_STATUS)) {
-        return getErrorMessage(error);
-      } else {
-        return "Extend failed.";
+        errorMessage = getErrorMessage(error);
       }
+
+      this.logger.error(
+        errorMessage,
+        error
+      );
+
+      return errorMessage;
     }
 
     return getResponseWithStructuredContent({

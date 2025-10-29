@@ -13,6 +13,7 @@ import {
   ToolResponse,
 } from "../utils";
 import { BAD_REQUEST_STATUS } from "../constants";
+import { SwarmConfig } from "../config";
 
 const UploadDataSchema = z.object({
   data: z.string(),
@@ -22,22 +23,27 @@ const UploadDataSchema = z.object({
 
 export class UploadDataTool extends BaseHederaQueryTool<typeof UploadDataSchema> {
   name = "swarm-upload-data";
-  description =
-    "Upload text data to Swarm. Optional options (ignore if they are not requested): " +
-    "redundancyLevel: redundancy level for fault tolerance. Optional, value is 0 if not requested. " +
-    "postageBatchId: The postage stamp batch ID which will be used to perform the upload, if it is provided.";
+  description = `
+    Upload text data to Swarm.
+    data: Arbitrary string to upload.
+    redundancyLevel: Redundancy level for fault tolerance: 0 - none, 1 - medium, 2 - strong, 3 - insane, 4 - paranoid (higher values provide better fault tolerance but increase storage overhead). Optional, value is 0 if not requested.
+    postageBatchId: The postage stamp batch ID which will be used to perform the upload, if it is provided.
+  `;
   namespace = "swarm";
   specificInputSchema = UploadDataSchema;
   bee: Bee;
-  
+  config: SwarmConfig;
+          
   constructor(params: {
     hederaKit: HederaAgentKit;
+    config: SwarmConfig;
     logger?: GenericPluginContext['logger'];
     bee: Bee;
   }) {
-    const { bee, ...rest } = params;
+    const { bee, config, ...rest } = params;
     super(rest);
     this.bee = bee;
+    this.config = config;
   }
   
   protected async executeQuery(
@@ -46,12 +52,18 @@ export class UploadDataTool extends BaseHederaQueryTool<typeof UploadDataSchema>
     const { data, redundancyLevel, postageBatchId: inputPostageBatchId } = input;
 
     if (!data) {
-      return "Missing required parameter: data.";
+      this.logger.error(
+        'Missing required parameter: data.'
+      );
+
+      return 'Missing required parameter: data.';
     }
 
     const postageBatchId = await getUploadPostageBatchId(
       inputPostageBatchId,
-      this.bee
+      this.bee,
+      this.config,
+      this.logger
     );
 
     const binaryData = Buffer.from(data);
@@ -63,24 +75,26 @@ export class UploadDataTool extends BaseHederaQueryTool<typeof UploadDataSchema>
     try {
       result = await this.bee.uploadData(postageBatchId, binaryData, options);
     } catch (error) {
-      this.logger.error("UploadDataTool failed", error);
-
-      return `Upload data error message: ${JSON.stringify(error)}`;
+      let errorMessage = 'Unable to upload data.';
 
       if (errorHasStatus(error, BAD_REQUEST_STATUS)) {
-        return getErrorMessage(error);
-      } else {
-        return "Unable to upload data.";
+        errorMessage = getErrorMessage(error);
       }
+
+      this.logger.error(
+        errorMessage,
+        error
+      );
+      
+      return errorMessage;
     }
 
     return JSON.stringify(
       getResponseWithStructuredContent({
         reference: result.reference.toString(),
         url: this.bee.url + "/bytes/" + result.reference.toString(),
-        message: "Data successfully uploaded to Swarm",
+        message: 'Data successfully uploaded to Swarm',
       })
     );
   }
-
 }

@@ -14,6 +14,7 @@ import {
   getUploadPostageBatchId,
 } from "../utils";
 import { BAD_REQUEST_STATUS } from "../constants";
+import { SwarmConfig } from "../config";
 
 const UploadFolderSchema = z.object({
   folderPath: z.string(),
@@ -23,22 +24,25 @@ const UploadFolderSchema = z.object({
 
 export class UploadFolderTool extends BaseHederaQueryTool<typeof UploadFolderSchema> {
   name = "swarm-upload-folder";
-  description = `Upload a folder to Swarm. Optional options (ignore if they are not requested): 
-      folderPath: path to the folder to upload. 
-      redundancyLevel: redundancy level for fault tolerance. Optional, value is 0 if not requested. 
+  description = `Upload a folder to Swarm.
+      folderPath: Path to the folder to upload. 
+      redundancyLevel: Redundancy level for fault tolerance (higher values provide better fault tolerance but increase storage overhead). 0 - none, 1 - medium, 2 - strong, 3 - insane, 4 - paranoid. 
       postageBatchId: The postage stamp batch ID which will be used to perform the upload, if it is provided.`;
   namespace = "swarm";
   specificInputSchema = UploadFolderSchema;
   bee: Bee;
-  
+  config: SwarmConfig;
+              
   constructor(params: {
     hederaKit: HederaAgentKit;
+    config: SwarmConfig;
     logger?: GenericPluginContext['logger'];
     bee: Bee;
   }) {
-    const { bee, ...rest } = params;
+    const { bee, config, ...rest } = params;
     super(rest);
     this.bee = bee;
+    this.config = config;
   }
   
   protected async executeQuery(
@@ -47,7 +51,11 @@ export class UploadFolderTool extends BaseHederaQueryTool<typeof UploadFolderSch
     const { folderPath, redundancyLevel: inputRedundancyLevel, postageBatchId: inputPostageBatchId } = input;
 
     if (!folderPath) {
-      return "Missing required parameter: folderPath.";
+      this.logger.error(
+        'Missing required parameter: folderPath.'
+      );
+
+      return 'Missing required parameter: folderPath.';
     }
 
     // // Check if in stdio mode for folder path uploads
@@ -58,12 +66,18 @@ export class UploadFolderTool extends BaseHederaQueryTool<typeof UploadFolderSch
     // Check if folder exists
     const stats = await promisify(fs.stat)(folderPath);
     if (!stats.isDirectory()) {
+      this.logger.error(
+        `Path is not a directory: ${folderPath}.`
+      );
+
       return `Path is not a directory: ${folderPath}.`;
     }
 
     const postageBatchId = await getUploadPostageBatchId(
       inputPostageBatchId,
-      this.bee
+      this.bee,
+      this.config,
+      this.logger
     );
 
     const redundancyLevel = inputRedundancyLevel;
@@ -75,7 +89,7 @@ export class UploadFolderTool extends BaseHederaQueryTool<typeof UploadFolderSch
 
     const deferred = true;
     options.deferred = deferred;
-    let message = "Folder successfully uploaded to Swarm";
+    let message = 'Folder successfully uploaded to Swarm';
 
     let tagId: string | undefined = undefined;
     if (deferred) {
@@ -84,9 +98,12 @@ export class UploadFolderTool extends BaseHederaQueryTool<typeof UploadFolderSch
         tagId = tag.uid.toString();
         options.tag = tag.uid;
         message =
-          "Folder upload started in deferred mode. Use query_upload_progress to track progress.";
+          'Folder upload started in deferred mode. Use swarm-query-upload-progress to track progress.';
       } catch (error) {
-        this.logger.error(`Failed to create tag: ${error}`);
+        this.logger.error(
+          'Failed to create tag',
+          error
+        );
         options.deferred = false;
       }
     }
@@ -101,11 +118,18 @@ export class UploadFolderTool extends BaseHederaQueryTool<typeof UploadFolderSch
         options
       );
     } catch (error) {
+      let errorMessage = 'Unable to upload folder.';
+
       if (errorHasStatus(error, BAD_REQUEST_STATUS)) {
-        return getErrorMessage(error);
-      } else {
-        return "Unable to upload folder.";
+        errorMessage = getErrorMessage(error);
       }
+
+      this.logger.error(
+        errorMessage,
+        error
+      );
+      
+      return errorMessage;
     }
 
     return JSON.stringify(getResponseWithStructuredContent({

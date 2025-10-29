@@ -44,6 +44,7 @@ import { ParameterService } from './services/parameter-service';
 import { FormatConverterRegistry } from './services/formatters/format-converter-registry';
 import { TopicIdToHrlConverter } from './services/formatters/converters/topic-id-to-hrl-converter';
 import { StringNormalizationConverter } from './services/formatters/converters/string-normalization-converter';
+import { SwarmConfig } from './plugins/community/swarm';
 
 export type ToolDescriptor = {
   name: string;
@@ -83,6 +84,7 @@ export interface ConversationalAgentOptions {
   stateManager?: IStateManager;
   scheduleUserTransactionsInBytesMode?: boolean;
   mirrorNodeConfig?: MirrorNodeConfig;
+  swarmConfig?: SwarmConfig;
   disableLogging?: boolean;
   enabledPlugins?: string[];
   disabledPlugins?: string[];
@@ -156,7 +158,7 @@ export class ConversationalAgent {
     this.inscribePlugin = new InscribePlugin();
     this.hbarPlugin = new HbarPlugin();
     this.webBrowserPlugin = new WebBrowserPlugin();
-    this.swarmPlugin = new SwarmPlugin();
+    this.swarmPlugin = new SwarmPlugin(options.swarmConfig);
     this.logger = new Logger({
       module: 'ConversationalAgent',
       silent: options.disableLogging || false,
@@ -799,8 +801,9 @@ export class ConversationalAgent {
       mirrorNodeConfig,
       disableLogging,
       accountId = '',
+      swarmConfig
     } = this.options;
-
+    
     return {
       framework: 'langchain',
       signer,

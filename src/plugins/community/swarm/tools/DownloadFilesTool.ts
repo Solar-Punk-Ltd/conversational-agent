@@ -5,6 +5,7 @@ import path from "path";
 import { BaseHederaQueryTool, GenericPluginContext, HederaAgentKit } from "hedera-agent-kit";
 import { promisify } from "util";
 import { ToolResponse } from "../utils";
+import { SwarmConfig } from "../config";
 
 const DownloadFilesSchema = z.object({
   reference: z.string(),
@@ -13,19 +14,26 @@ const DownloadFilesSchema = z.object({
 
 export class DownloadFilesTool extends BaseHederaQueryTool<typeof DownloadFilesSchema> {
   name = "swarm-download-files";
-  description = "Download folder, files from a Swarm reference.";
+  description = `Download folder, files from a Swarm reference and save to file path or return file list of the reference.
+    Prioritizes this tool over swarm-download-data if there is no assumption about the data type.
+    reference: Swarm reference hash.
+    filePath: Optional file path to save the downloaded content (only available in stdio mode). If not provided list of files in the manifest will be returned.
+  `;
   namespace = "swarm";
   specificInputSchema = DownloadFilesSchema;
-  bee: Bee;
+  bee: Bee; 
+  config: SwarmConfig;
 
   constructor(params: {
     hederaKit: HederaAgentKit;
+    config: SwarmConfig;
     logger?: GenericPluginContext['logger'];
     bee: Bee;
   }) {
-    const { bee, ...rest } = params;
+    const { bee, config, ...rest } = params;
     super(rest);
     this.bee = bee;
+    this.config = config;
   }
 
   protected async executeQuery(
@@ -34,7 +42,11 @@ export class DownloadFilesTool extends BaseHederaQueryTool<typeof DownloadFilesS
     const { reference, filePath } = input;
     
     if (!reference) {
-      return "Missing required parameter: reference";
+      this.logger.error(
+        'Missing required parameter: reference.'
+      );
+
+      return "Missing required parameter: reference.";
     }
     
     // if (filePath && !(transport instanceof StdioServerTransport)) {
@@ -145,7 +157,7 @@ export class DownloadFilesTool extends BaseHederaQueryTool<typeof DownloadFilesS
         };
       }
     } else {
-      return "Try download_data tool instead since the given reference is not a manifest.";
+      return "Try swarm-download-data tool instead since the given reference is not a manifest.";
     }
   }
 }

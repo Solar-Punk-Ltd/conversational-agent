@@ -17,6 +17,7 @@ import {
   ToolResponse,
 } from "../utils";
 import { GATEWAY_STAMP_ERROR_MESSAGE, NOT_FOUND_STATUS } from "../constants";
+import { SwarmConfig } from "../config";
 
 const ListPostageStampsSchema = z.object({
   leastUsed: z.boolean().optional(),
@@ -27,20 +28,28 @@ const ListPostageStampsSchema = z.object({
 
 export class ListPostageStampsTool extends BaseHederaQueryTool<typeof ListPostageStampsSchema> {
   name = "swarm-list-postage-stamps";
-  description =
-    "List the available postage stamps. Optional options (ignore if they are not requested): leastUsed, limit, minUsage(%), maxUsage(%).";
+  description =`
+    List the available postage stamps.
+    leastUsed: A boolean value that tells if stamps are sorted so least used comes first.
+    limit: Limit is the maximum number of returned stamps.
+    minUsage: Only list stamps with at least this usage percentage.
+    maxUsage: Only list stamps with at most this usage percentage.  
+  `;
   namespace = "swarm";
   specificInputSchema = ListPostageStampsSchema;
   bee: Bee;
-
+  config: SwarmConfig;
+  
   constructor(params: {
     hederaKit: HederaAgentKit;
+    config: SwarmConfig;
     logger?: GenericPluginContext['logger'];
     bee: Bee;
   }) {
-    const { bee, ...rest } = params;
+    const { bee, config, ...rest } = params;
     super(rest);
     this.bee = bee;
+    this.config = config;
   }
 
   protected async executeQuery(
@@ -53,15 +62,18 @@ export class ListPostageStampsTool extends BaseHederaQueryTool<typeof ListPostag
     try {
       rawPostageBatches = await this.bee.getPostageBatches();
     } catch (error) {
-      this.logger.error("ListPostageStampsTool failed", error);
-
-      return `List stamps error message: ${this.bee.url}`;
+      let errorMessage = 'Retrieval of postage batches failed.';
 
       if (errorHasStatus(error, NOT_FOUND_STATUS)) {
-        return GATEWAY_STAMP_ERROR_MESSAGE;
-      } else {
-        return "Retrieval of postage batches failed.";
+        errorMessage = GATEWAY_STAMP_ERROR_MESSAGE;
       }
+    
+      this.logger.error(
+        errorMessage,
+        error
+      );
+    
+      return errorMessage;
     }
 
     const batches: PostageBatchCurated[] = rawPostageBatches.map((batch) => ({
