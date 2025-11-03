@@ -1,8 +1,9 @@
 import { Bee } from "@ethersphere/bee-js";
 import { z } from "zod";
-import { getResponseWithStructuredContent, ToolResponse } from "../utils";
+import { errorHasStatus, getErrorMessage, getResponseWithStructuredContent, ToolResponse } from "../utils";
 import { BaseHederaQueryTool, GenericPluginContext, HederaAgentKit } from "hedera-agent-kit";
 import { SwarmConfig } from "../config";
+import { BAD_REQUEST_STATUS } from "../constants";
 
 const DownloadDataSchema = z.object({
   reference: z.string(),
@@ -55,7 +56,20 @@ export class DownloadDataTool extends BaseHederaQueryTool<typeof DownloadDataSch
       throw new Error("Invalid Swarm content address hash value for reference.");
     }
 
-    const data = await this.bee.downloadData(reference);
+    let data;
+    try {
+      data = await this.bee.downloadData(reference);
+    } catch (error) {
+      let errorMessage = 'Downloading data failed.';
+
+      if (errorHasStatus(error, BAD_REQUEST_STATUS)) {
+        errorMessage = getErrorMessage(error);
+      }
+
+      this.logger.error(errorMessage, error);
+      throw new Error(errorMessage);
+    }
+
     const textData = data.toUtf8();
 
     return getResponseWithStructuredContent({

@@ -72,7 +72,6 @@ export class UpdateFeedTool extends BaseHederaQueryTool<typeof UpdateFeedSchema>
         inputPostageBatchId,
         this.bee,
         this.config,
-        this.logger
       );
     } catch (error) {
       let errorMessage = 'Update feed failed.';

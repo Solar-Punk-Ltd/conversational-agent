@@ -81,7 +81,6 @@ export class UploadFolderTool extends BaseHederaQueryTool<typeof UploadFolderSch
         inputPostageBatchId,
         this.bee,
         this.config,
-        this.logger
       );
     } catch (error) {
       let errorMessage = 'Upload folder failed.';

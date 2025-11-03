@@ -1,7 +1,6 @@
 import { Bee, PostageBatch } from "@ethersphere/bee-js";
 import { PostageBatchCurated, PostageBatchSummary } from "./model";
 import { SwarmConfig } from "./config";
-import { GenericPluginContext } from "hedera-agent-kit";
 import { DEFAULT_GATEWAY_BATCH_ID, NOT_FOUND_STATUS } from "./constants";
 
 export interface ToolResponse {
@@ -86,7 +85,6 @@ export const getUploadPostageBatchId = async (
   argsPostageBatchId: string | undefined,
   bee: Bee,
   config: SwarmConfig,
-  logger: GenericPluginContext['logger']
 ): Promise<string> => {
     let postageBatchId = argsPostageBatchId;
     const autoAssignStamp = config.autoAssignStamp ?? true;

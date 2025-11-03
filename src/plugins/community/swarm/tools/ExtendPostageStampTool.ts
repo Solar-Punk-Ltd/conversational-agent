@@ -64,7 +64,8 @@ export class ExtendPostageStampTool extends BaseHederaQueryTool<typeof ExtendPos
       throw new Error('You need at least one parameter from duration and size.');
     }
 
-    const extendSize = !!size ? Size.fromMegabytes(size) : Size.fromBytes(1);
+    // If size is missing, Size.fromBytes(1) will get smallest depth and not increase size.
+    const extendSize = !!size ? Size.fromMegabytes(size) : Size.fromBytes(1); 
     let extendDuration = Duration.ZERO;
 
     try {

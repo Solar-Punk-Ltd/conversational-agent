@@ -66,7 +66,6 @@ export class UploadDataTool extends BaseHederaQueryTool<typeof UploadDataSchema>
         inputPostageBatchId,
         this.bee,
         this.config,
-        this.logger
       );
     } catch (error) {
       let errorMessage = 'Upload data failed.';

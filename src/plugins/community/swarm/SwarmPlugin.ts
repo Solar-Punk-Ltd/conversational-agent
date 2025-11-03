@@ -164,7 +164,7 @@ export class SwarmPlugin extends BasePlugin<GenericPluginContext> {
     ];
 
     this.context.logger.info(
-      "Swarm Plugin initialized with list postage stamps, upload data tools."
+      "Swarm Plugin initialized."
     );
   }
 
@@ -176,4 +176,3 @@ export class SwarmPlugin extends BasePlugin<GenericPluginContext> {
     this.tools = [];
   }
 }
-

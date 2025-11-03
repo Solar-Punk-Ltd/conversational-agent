@@ -2,9 +2,10 @@ import { Bee } from "@ethersphere/bee-js";
 import { Wallet } from "@ethereumjs/wallet";
 import { z } from "zod";
 import crypto from "crypto";
-import { getResponseWithStructuredContent, hexToBytes, ToolResponse } from "../utils";
+import { errorHasStatus, getErrorMessage, getResponseWithStructuredContent, hexToBytes, ToolResponse } from "../utils";
 import { BaseHederaQueryTool, GenericPluginContext, HederaAgentKit } from "hedera-agent-kit";
 import { SwarmConfig } from "../config";
+import { BAD_REQUEST_STATUS } from "../constants";
 
 const ReadFeedSchema = z.object({
   memoryTopic: z.string(),
@@ -87,12 +88,21 @@ export class ReadFeedTool extends BaseHederaQueryTool<typeof ReadFeedSchema> {
       }
     }
 
-    // Use feed reader to get the latest update
-    const feedReader = this.bee.makeFeedReader(topicBytes, feedOwner);
-    const latestUpdate = await feedReader.downloadPayload();
-    // Download the referenced data
-    const textData = latestUpdate.payload.toUtf8();
-
+    let textData;
+    
+    try {
+      const feedReader = this.bee.makeFeedReader(topicBytes, feedOwner);
+      const latestUpdate = await feedReader.downloadPayload();
+      textData = latestUpdate.payload.toUtf8();
+    } catch (error) {
+      let errorMessage = 'Reading feed failed.';
+      if (errorHasStatus(error, BAD_REQUEST_STATUS)) {
+        errorMessage = getErrorMessage(error);
+      }
+      this.logger.error(errorMessage, error);
+      throw new Error(errorMessage);
+    }
+    
     return getResponseWithStructuredContent({
       textData,
     });
