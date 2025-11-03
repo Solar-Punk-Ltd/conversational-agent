@@ -89,7 +89,7 @@ export const getUploadPostageBatchId = async (
   logger: GenericPluginContext['logger']
 ): Promise<string> => {
     let postageBatchId = argsPostageBatchId;
-    const autoAssignStamp = config.autoAssignStamp;
+    const autoAssignStamp = config.autoAssignStamp ?? true;
     let maxRemainingSize = 0;
 
     if (!postageBatchId && !autoAssignStamp) {
