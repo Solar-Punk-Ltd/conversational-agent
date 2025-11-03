@@ -44,7 +44,7 @@ export class ReadFeedTool extends BaseHederaQueryTool<typeof ReadFeedSchema> {
         'Missing required parameter: memoryTopic.'
       );
 
-      return 'Missing required parameter: memoryTopic.';
+      throw new Error('Missing required parameter: memoryTopic.');
     }
 
     this.logger.info(`[API] Downloading text from Swarm feed with topic: ${memoryTopic}.`);
@@ -52,7 +52,7 @@ export class ReadFeedTool extends BaseHederaQueryTool<typeof ReadFeedSchema> {
     if (!this.config.beeFeedPK) {
       this.logger.error('Feed private key not configured.');
 
-      return 'Feed private key not configured.';
+      throw new Error('Feed private key not configured.');
     }
 
     // Process topic - if not a hex string, hash it
@@ -83,7 +83,7 @@ export class ReadFeedTool extends BaseHederaQueryTool<typeof ReadFeedSchema> {
       if (feedOwner.length !== 40) {
         this.logger.error('Owner must be a valid Ethereum address.');
 
-        return 'Owner must be a valid Ethereum address.';
+        throw new Error('Owner must be a valid Ethereum address.');
       }
     }
 

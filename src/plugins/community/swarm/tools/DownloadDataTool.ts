@@ -41,7 +41,7 @@ export class DownloadDataTool extends BaseHederaQueryTool<typeof DownloadDataSch
         'Missing required parameter: reference.'
       );
 
-      return "Missing required parameter: reference.";
+      throw new Error("Missing required parameter: reference.");
     }
 
     const isRefNotSwarmHash =
@@ -52,7 +52,7 @@ export class DownloadDataTool extends BaseHederaQueryTool<typeof DownloadDataSch
         'Invalid Swarm content address hash value for reference.'
       );
 
-      return "Invalid Swarm content address hash value for reference.";
+      throw new Error("Invalid Swarm content address hash value for reference.");
     }
 
     const data = await this.bee.downloadData(reference);

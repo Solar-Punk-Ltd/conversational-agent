@@ -54,7 +54,7 @@ export class GetPostageStampTool extends BaseHederaQueryTool<typeof GetPostageSt
         'Missing required parameter: postageBatchId.'
       );
 
-      return "Missing required parameter: postageBatchId.";
+      throw new Error("Missing required parameter: postageBatchId.");
     }
 
     let rawPostageBatch;
@@ -73,7 +73,7 @@ export class GetPostageStampTool extends BaseHederaQueryTool<typeof GetPostageSt
         error
       );
 
-      return errorMessage;
+      throw new Error(errorMessage);
     }
 
     const batch: PostageBatchCurated = {

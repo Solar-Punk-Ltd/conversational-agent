@@ -56,7 +56,7 @@ export class UploadFolderTool extends BaseHederaQueryTool<typeof UploadFolderSch
         'Missing required parameter: folderPath.'
       );
 
-      return 'Missing required parameter: folderPath.';
+      throw new Error('Missing required parameter: folderPath.');
     }
 
     // // Check if in stdio mode for folder path uploads
@@ -71,7 +71,7 @@ export class UploadFolderTool extends BaseHederaQueryTool<typeof UploadFolderSch
         `Path is not a directory: ${folderPath}.`
       );
 
-      return `Path is not a directory: ${folderPath}.`;
+      throw new Error(`Path is not a directory: ${folderPath}.`);
     }
 
     let postageBatchId = "";
@@ -90,7 +90,7 @@ export class UploadFolderTool extends BaseHederaQueryTool<typeof UploadFolderSch
       }
       this.logger.error(errorMessage);
 
-      return errorMessage;
+      throw new Error(errorMessage);
     }
     
     const redundancyLevel = inputRedundancyLevel;
@@ -142,7 +142,7 @@ export class UploadFolderTool extends BaseHederaQueryTool<typeof UploadFolderSch
         error
       );
       
-      return errorMessage;
+      throw new Error(errorMessage);
     }
 
     return getResponseWithStructuredContent({

@@ -47,7 +47,7 @@ export class QueryUploadProgressTool extends BaseHederaQueryTool<typeof QueryUpl
         'Missing required parameter: tagId.'
       );
 
-      return 'Missing required parameter: tagId.';
+      throw new Error('Missing required parameter: tagId.');
     }
 
     const tagUid = Number.parseInt(input.tagId, 10);
@@ -56,7 +56,7 @@ export class QueryUploadProgressTool extends BaseHederaQueryTool<typeof QueryUpl
         'Invalid tagId format. Expected a numeric string.'
       );
 
-      return 'Invalid tagId format. Expected a numeric string.';
+      throw new Error('Invalid tagId format. Expected a numeric string.');
     }
 
     try {
@@ -103,7 +103,7 @@ export class QueryUploadProgressTool extends BaseHederaQueryTool<typeof QueryUpl
         error
       );
       
-      return errorMessage;
+      throw new Error(errorMessage);
     }
   }
 }

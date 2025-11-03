@@ -56,7 +56,7 @@ export class UploadDataTool extends BaseHederaQueryTool<typeof UploadDataSchema>
         'Missing required parameter: data.'
       );
 
-      return 'Missing required parameter: data.';
+      throw new Error('Missing required parameter: data.');
     }
 
     let postageBatchId = "";
@@ -75,7 +75,7 @@ export class UploadDataTool extends BaseHederaQueryTool<typeof UploadDataSchema>
       }
       this.logger.error(errorMessage);
 
-      return errorMessage;
+      throw new Error(errorMessage);
     }
 
     const binaryData = Buffer.from(data);
@@ -98,7 +98,7 @@ export class UploadDataTool extends BaseHederaQueryTool<typeof UploadDataSchema>
         error
       );
       
-      return errorMessage;
+      throw new Error(errorMessage);
     }
 
     return getResponseWithStructuredContent({

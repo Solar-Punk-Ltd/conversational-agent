@@ -58,7 +58,7 @@ export class UploadFileTool extends BaseHederaQueryTool<typeof UploadFileSchema>
         'Missing required parameter: data.'
       );
 
-      return 'Missing required parameter: data.';
+      throw new Error('Missing required parameter: data.');
     }
 
     let postageBatchId = "";
@@ -77,7 +77,7 @@ export class UploadFileTool extends BaseHederaQueryTool<typeof UploadFileSchema>
       }
       this.logger.error(errorMessage);
 
-      return errorMessage;
+      throw new Error(errorMessage);
     }
 
     let binaryData: Buffer;
@@ -98,7 +98,7 @@ export class UploadFileTool extends BaseHederaQueryTool<typeof UploadFileSchema>
           fileError
         );
 
-        return `Unable to read file at path: ${data}.`;
+        throw new Error(`Unable to read file at path: ${data}.`);
       }
 
       name = data.split("/").pop();
@@ -134,7 +134,7 @@ export class UploadFileTool extends BaseHederaQueryTool<typeof UploadFileSchema>
             error
           );
 
-          return GATEWAY_TAG_ERROR_MESSAGE;
+          throw new Error(GATEWAY_TAG_ERROR_MESSAGE);
         }
       }
     }
@@ -156,7 +156,7 @@ export class UploadFileTool extends BaseHederaQueryTool<typeof UploadFileSchema>
         error
       );
       
-      return errorMessage;
+      throw new Error(errorMessage);
     }
 
     return getResponseWithStructuredContent({

@@ -55,14 +55,14 @@ export class CreatePostageStampTool extends BaseHederaQueryTool<typeof CreatePos
       this.logger.error(
         'Missing required parameter: size.'
       );
-
-      return 'Missing required parameter: size.';
+      
+      throw new Error('Missing required parameter: size.');
     } else if (!duration) {
       this.logger.error(
         'Missing required parameter: duration.'
       );
-
-      return 'Missing required parameter: duration.';
+      
+      throw new Error('Missing required parameter: duration.');
     }
 
     let durationMs;
@@ -73,7 +73,8 @@ export class CreatePostageStampTool extends BaseHederaQueryTool<typeof CreatePos
       this.logger.error(
         'Invalid parameter: duration.'
       );
-      return 'Invalid parameter: duration.';
+
+      throw new Error('Invalid parameter: duration.');
     }
 
     let buyStorageResponse: BatchId;
@@ -121,7 +122,7 @@ export class CreatePostageStampTool extends BaseHederaQueryTool<typeof CreatePos
         error
       );
 
-      return errorMessage;
+      throw new Error(errorMessage);
     }
 
     return {

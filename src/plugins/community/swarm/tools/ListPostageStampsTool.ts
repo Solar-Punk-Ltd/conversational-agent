@@ -73,7 +73,7 @@ export class ListPostageStampsTool extends BaseHederaQueryTool<typeof ListPostag
         error
       );
     
-      return errorMessage;
+      throw new Error(errorMessage);
     }
 
     const batches: PostageBatchCurated[] = rawPostageBatches.map((batch) => ({

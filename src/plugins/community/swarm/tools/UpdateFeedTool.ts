@@ -51,19 +51,18 @@ export class UpdateFeedTool extends BaseHederaQueryTool<typeof UpdateFeedSchema>
       input: z.infer<typeof UpdateFeedSchema>
   ): Promise<ToolResponse | string> {
     const { data, memoryTopic, postageBatchId: inputPostageBatchId  } = input;
-    
      if (!data) {
       this.logger.error(
         'Missing required parameter: data.'
       );
 
-      return 'Missing required parameter: data.';
+      throw new Error('Missing required parameter: data.');
     } else if (!memoryTopic) {
       this.logger.error(
         'Missing required parameter: topic.'
       );
 
-      return 'Missing required parameter: topic.';
+      throw new Error('Missing required parameter: topic.');
     }
     
     let postageBatchId = "";
@@ -82,7 +81,7 @@ export class UpdateFeedTool extends BaseHederaQueryTool<typeof UpdateFeedSchema>
       }
       this.logger.error(errorMessage);
 
-      return errorMessage;
+      throw new Error(errorMessage);
     }
 
     const binaryData = Buffer.from(data);
@@ -91,7 +90,7 @@ export class UpdateFeedTool extends BaseHederaQueryTool<typeof UpdateFeedSchema>
     if (!this.config.beeFeedPK) {
       this.logger.error('Feed private key not configured.');
 
-      return 'Feed private key not configured.';
+      throw new Error('Feed private key not configured.');
     }
 
     // Process topic - if not a hex string, hash it
@@ -135,7 +134,7 @@ export class UpdateFeedTool extends BaseHederaQueryTool<typeof UpdateFeedSchema>
         error
       );
       
-      return errorMessage;
+      throw new Error(errorMessage);
     }
 
     const reference = result.reference.toString();

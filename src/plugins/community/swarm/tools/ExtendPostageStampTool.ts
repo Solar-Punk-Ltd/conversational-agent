@@ -55,13 +55,13 @@ export class ExtendPostageStampTool extends BaseHederaQueryTool<typeof ExtendPos
         'Missing required parameter: postageBatchId.'
       );
 
-      return 'Missing required parameter: postageBatchId.';
+      throw new Error('Missing required parameter: postageBatchId.');
     } else if (!duration && !size) {
       this.logger.error(
         'You need at least one parameter from duration and size.'
       );
 
-      return 'You need at least one parameter from duration and size.';
+      throw new Error('You need at least one parameter from duration and size.');
     }
 
     const extendSize = !!size ? Size.fromMegabytes(size) : Size.fromBytes(1);
@@ -76,7 +76,7 @@ export class ExtendPostageStampTool extends BaseHederaQueryTool<typeof ExtendPos
         'Invalid parameter: duration.'
       );
 
-      return 'Invalid parameter: duration.';
+      throw new Error('Invalid parameter: duration.');
     }
 
     let extendStorageResponse;
@@ -101,7 +101,7 @@ export class ExtendPostageStampTool extends BaseHederaQueryTool<typeof ExtendPos
         error
       );
 
-      return errorMessage;
+      throw new Error(errorMessage);
     }
 
     return getResponseWithStructuredContent({

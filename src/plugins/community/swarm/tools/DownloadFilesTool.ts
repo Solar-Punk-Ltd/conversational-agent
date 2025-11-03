@@ -45,18 +45,10 @@ export class DownloadFilesTool extends BaseHederaQueryTool<typeof DownloadFilesS
       this.logger.error(
         'Missing required parameter: reference.'
       );
-
-      return "Missing required parameter: reference.";
+      
+      throw new Error("Missing required parameter: reference.");
     }
-    
-    // if (filePath && !(transport instanceof StdioServerTransport)) {
-    //   throw new McpError(
-    //     ErrorCode.InvalidParams,
-    //     "Saving to file path is only supported in stdio mode"
-    //   );
-    // }
 
-    
     this.logger.info(`[API] Downloading folder from Swarm with reference: ${reference}.`);
 
     // Check if the reference is a manifest
