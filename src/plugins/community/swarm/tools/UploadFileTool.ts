@@ -35,7 +35,7 @@ export class UploadFileTool extends BaseHederaQueryTool<typeof UploadFileSchema>
   specificInputSchema = UploadFileSchema;
   bee: Bee;
   config: SwarmConfig;
-            
+
   constructor(params: {
     hederaKit: HederaAgentKit;
     config: SwarmConfig;
@@ -61,12 +61,24 @@ export class UploadFileTool extends BaseHederaQueryTool<typeof UploadFileSchema>
       return 'Missing required parameter: data.';
     }
 
-    const postageBatchId = await getUploadPostageBatchId(
-      inputPostageBatchId,
-      this.bee,
-      this.config,
-      this.logger
-    );
+    let postageBatchId = "";
+
+    try {
+      postageBatchId = await getUploadPostageBatchId(
+        inputPostageBatchId,
+        this.bee,
+        this.config,
+        this.logger
+      );
+    } catch (error) {
+      let errorMessage = 'Upload file failed.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      this.logger.error(errorMessage);
+
+      return errorMessage;
+    }
 
     let binaryData: Buffer;
     let name: string | undefined;
@@ -147,11 +159,11 @@ export class UploadFileTool extends BaseHederaQueryTool<typeof UploadFileSchema>
       return errorMessage;
     }
 
-    return JSON.stringify(getResponseWithStructuredContent({
+    return getResponseWithStructuredContent({
       reference: result.reference.toString(),
       url: this.bee.url + "/bzz/" + result.reference.toString(),
       message,
       tagId,
-    }));
+    });
   }
 }

@@ -65,13 +65,25 @@ export class UpdateFeedTool extends BaseHederaQueryTool<typeof UpdateFeedSchema>
 
       return 'Missing required parameter: topic.';
     }
+    
+    let postageBatchId = "";
 
-    const postageBatchId = await getUploadPostageBatchId(
-      inputPostageBatchId,
-      this.bee,
-      this.config,
-      this.logger
-    );
+    try {
+      postageBatchId = await getUploadPostageBatchId(
+        inputPostageBatchId,
+        this.bee,
+        this.config,
+        this.logger
+      );
+    } catch (error) {
+      let errorMessage = 'Update feed failed.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      this.logger.error(errorMessage);
+
+      return errorMessage;
+    }
 
     const binaryData = Buffer.from(data);
 

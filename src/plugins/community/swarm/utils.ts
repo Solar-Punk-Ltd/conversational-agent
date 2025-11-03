@@ -93,11 +93,7 @@ export const getUploadPostageBatchId = async (
     let maxRemainingSize = 0;
 
     if (!postageBatchId && !autoAssignStamp) {
-      logger.error(
-        'No postageBatchId was provided.'
-      );
-
-      return 'No postageBatchId was provided. Please repeat the prompt and also specify the usable postage batch id.';
+      throw new Error('No postageBatchId was provided. Please repeat the prompt and also specify the usable postage batch id.');
     } else if (!postageBatchId) {
       try {
         const rawPostageBatches = await bee.getPostageBatches();
@@ -118,22 +114,15 @@ export const getUploadPostageBatchId = async (
         if (errorHasStatus(error, NOT_FOUND_STATUS)) {
           postageBatchId = DEFAULT_GATEWAY_BATCH_ID;
         } else {
-          logger.error(
-            'Retrieval of postage batches failed.'
-          );
-
-          return 'Retrieval of postage batches failed.';
+          throw new Error('Retrieval of postage batches failed.');
         }
       }
     }
 
     if (!postageBatchId) {
-      logger.error(
-        'There is no usable postage batch with capacity.'
-      );
-
-      return 'There is no usable postage batch with capacity.';
+      throw new Error('There is no usable postage batch with capacity.');
     }
+
     return postageBatchId!;
 };
 

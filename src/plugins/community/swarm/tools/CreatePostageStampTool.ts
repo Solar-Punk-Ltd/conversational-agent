@@ -79,12 +79,16 @@ export class CreatePostageStampTool extends BaseHederaQueryTool<typeof CreatePos
     let buyStorageResponse: BatchId;
 
     try {
+      let options = {};
+      if (label !== undefined) {
+        options = {
+          label
+        };
+      }
       const buyStoragePromise = this.bee.buyStorage(
         Size.fromMegabytes(size),
         Duration.fromMilliseconds(durationMs),
-        {
-          label: label || '',
-        }
+        options
       );
       const [response, hasTimedOut] = await runWithTimeout(
         buyStoragePromise,

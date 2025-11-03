@@ -36,9 +36,6 @@ export class SwarmPlugin extends BasePlugin<GenericPluginContext> {
   ) {
     super();
     this.config = config || null;
-    console.log("=====SwarmPlugin.constructor=====");
-    console.log("=====config=====");
-    console.log(config);
   }
 
   override async initialize(context: GenericPluginContext): Promise<void> {

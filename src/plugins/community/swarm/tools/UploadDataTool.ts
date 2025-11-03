@@ -59,12 +59,24 @@ export class UploadDataTool extends BaseHederaQueryTool<typeof UploadDataSchema>
       return 'Missing required parameter: data.';
     }
 
-    const postageBatchId = await getUploadPostageBatchId(
-      inputPostageBatchId,
-      this.bee,
-      this.config,
-      this.logger
-    );
+    let postageBatchId = "";
+
+    try {
+      postageBatchId = await getUploadPostageBatchId(
+        inputPostageBatchId,
+        this.bee,
+        this.config,
+        this.logger
+      );
+    } catch (error) {
+      let errorMessage = 'Upload data failed.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      this.logger.error(errorMessage);
+
+      return errorMessage;
+    }
 
     const binaryData = Buffer.from(data);
 
@@ -89,12 +101,10 @@ export class UploadDataTool extends BaseHederaQueryTool<typeof UploadDataSchema>
       return errorMessage;
     }
 
-    return JSON.stringify(
-      getResponseWithStructuredContent({
+    return getResponseWithStructuredContent({
         reference: result.reference.toString(),
         url: this.bee.url + "/bytes/" + result.reference.toString(),
         message: 'Data successfully uploaded to Swarm',
-      })
-    );
+      });
   }
 }

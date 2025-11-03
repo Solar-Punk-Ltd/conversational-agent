@@ -12,6 +12,7 @@ import {
   getErrorMessage,
   getResponseWithStructuredContent,
   getUploadPostageBatchId,
+  ToolResponse,
 } from "../utils";
 import { BAD_REQUEST_STATUS } from "../constants";
 import { SwarmConfig } from "../config";
@@ -47,7 +48,7 @@ export class UploadFolderTool extends BaseHederaQueryTool<typeof UploadFolderSch
   
   protected async executeQuery(
       input: z.infer<typeof UploadFolderSchema>
-  ): Promise<string> {
+  ): Promise<ToolResponse | string> {
     const { folderPath, redundancyLevel: inputRedundancyLevel, postageBatchId: inputPostageBatchId } = input;
 
     if (!folderPath) {
@@ -73,13 +74,25 @@ export class UploadFolderTool extends BaseHederaQueryTool<typeof UploadFolderSch
       return `Path is not a directory: ${folderPath}.`;
     }
 
-    const postageBatchId = await getUploadPostageBatchId(
-      inputPostageBatchId,
-      this.bee,
-      this.config,
-      this.logger
-    );
+    let postageBatchId = "";
 
+    try {
+      postageBatchId = await getUploadPostageBatchId(
+        inputPostageBatchId,
+        this.bee,
+        this.config,
+        this.logger
+      );
+    } catch (error) {
+      let errorMessage = 'Upload folder failed.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      this.logger.error(errorMessage);
+
+      return errorMessage;
+    }
+    
     const redundancyLevel = inputRedundancyLevel;
     const options: CollectionUploadOptions = {};
 
@@ -132,11 +145,11 @@ export class UploadFolderTool extends BaseHederaQueryTool<typeof UploadFolderSch
       return errorMessage;
     }
 
-    return JSON.stringify(getResponseWithStructuredContent({
+    return getResponseWithStructuredContent({
       reference: result.reference.toString(),
       url: this.bee.url + "/bzz/" + result.reference.toString(),
       message,
       tagId,
-    }));
+    });
   }
 }
