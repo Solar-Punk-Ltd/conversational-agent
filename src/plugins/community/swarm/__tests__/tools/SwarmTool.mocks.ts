@@ -29,6 +29,7 @@ beeMock.makeFeedReader = jest.fn();
 beeMock.makeFeedWriter = jest.fn();
 beeMock.uploadFilesFromDirectory = jest.fn();
 beeMock.uploadFile = jest.fn();
+beeMock.downloadData = jest.fn();
 
 const swarmConfigMock = {
   beeApiUrl: 'http://127.0.0.1:1633',
