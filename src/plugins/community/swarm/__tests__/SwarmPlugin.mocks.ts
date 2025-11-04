@@ -25,10 +25,6 @@ jest.mock('hedera-agent-kit', () => {
     GenericPluginContext: jest.fn(),
     HederaTool: jest.fn(),
     BasePlugin: MockBasePlugin,
-    // HederaAgentKit: jest.fn().mockImplementation(() => ({
-    //   initialize: jest.fn(),
-    //   operationalMode: 'returnBytes',
-    // })),
   };
 });
 
