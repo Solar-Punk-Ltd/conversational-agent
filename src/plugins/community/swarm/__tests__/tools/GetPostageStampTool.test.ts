@@ -2,17 +2,15 @@ import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import './SwarmTool.mocks';
 
 import { GetPostageStampTool } from '../../tools/GetPostageStampTool';
-import { errorHasStatus, getBatchSummary, getResponseWithStructuredContent, ToolResponse } from '../../utils';
-import { GATEWAY_STAMP_ERROR_MESSAGE } from '../../constants';
+import { GATEWAY_STAMP_ERROR_MESSAGE, NOT_FOUND_STATUS } from '../../constants';
 import type { HederaAgentKit } from 'hedera-agent-kit';
 import { beeMock, contextMock, swarmConfigMock } from './SwarmTool.mocks';
-import { PostageBatch } from '@ethersphere/bee-js';
+import { Duration, PostageBatch, Size } from '@ethersphere/bee-js';
 import { PostageBatchCurated, PostageBatchSummary, ResponseContent } from '../../model';
 
 describe('GetPostageStampTool', () => {
   let tool: GetPostageStampTool;
   let hederaKitMock: HederaAgentKit;
-  
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -37,7 +35,7 @@ describe('GetPostageStampTool', () => {
 
   it('should handle Bee getPostageBatch not found error', async () => {
     const error = new Error('Not found');
-    (errorHasStatus as jest.Mock).mockReturnValue(true);
+    (error as any).status = NOT_FOUND_STATUS;
     beeMock.getPostageBatch.mockRejectedValue(error);
 
     await expect(tool['executeQuery']({ postageBatchId: '123' }))
@@ -50,7 +48,6 @@ describe('GetPostageStampTool', () => {
 
   it('should handle Bee getPostageBatch other errors', async () => {
     const error = new Error('Server error');
-    (errorHasStatus as jest.Mock).mockReturnValue(false);
     beeMock.getPostageBatch.mockRejectedValue(error);
 
     await expect(tool['executeQuery']({ postageBatchId: '123' }))
@@ -60,16 +57,27 @@ describe('GetPostageStampTool', () => {
       error
     );
   });
-
+  
   it('should return structured response on success', async () => {
-    const rawBatch = { batchID: { toHex: () => 'abc123' }, someField: 42 } as unknown as PostageBatch;
-    beeMock.getPostageBatch.mockResolvedValue(rawBatch);
-    (getBatchSummary as jest.Mock).mockReturnValue({ summaryField: 1 });
+    const batchId = 'abc123';
+    const rawBatch = {
+      batchID: { toHex: () => batchId },
+      usageText: '0%',
+      remainingSize: Size.fromMegabytes(1),
+      size: Size.fromMegabytes(1),
+      immutableFlag: true,
+      duration: Duration.fromWeeks(1)
+    } as unknown as PostageBatch;
 
-    const result = await tool['executeQuery']({ postageBatchId: '123' }) as unknown as ResponseContent<PostageBatchCurated, PostageBatchSummary>;
-    expect(result.raw.batchID).toBe('abc123');
-    expect(result.summary).toEqual({ summaryField: 1 });
-    expect(getBatchSummary).toHaveBeenCalledWith(rawBatch);
-    expect(getResponseWithStructuredContent).toHaveBeenCalled();
+    beeMock.getPostageBatch.mockResolvedValue(rawBatch);
+
+    const result = await tool['executeQuery']({ postageBatchId: batchId }) as ToolResponse;
+
+    // Extract structured content from response
+    const structured = result.structuredContent as ResponseContent<PostageBatchCurated, PostageBatchSummary>;
+
+    expect(structured.raw.batchID).toBe(batchId);
+    expect(structured.summary.stampID).toEqual(batchId);
+    expect(structured.summary.capacity).toEqual('1.000 MB remaining out of 1.000 MB');
   });
 });
