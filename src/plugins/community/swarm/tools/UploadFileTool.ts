@@ -83,11 +83,6 @@ export class UploadFileTool extends BaseHederaQueryTool<typeof UploadFileSchema>
     let name: string | undefined;
 
     if (isPath) {
-      // Check if in stdio mode for file path uploads
-      // if (!(transport instanceof StdioServerTransport)) {
-      //   return "File path uploads are only supported in stdio mode.";
-      // }
-
       // Read file from path
       try {
         binaryData = await promisify(fs.readFile)(data);
