@@ -1,6 +1,7 @@
 import { Bee } from "@ethersphere/bee-js";
 import type { Logger } from '@hashgraphonline/standards-sdk';
 import { GenericPluginContext, HederaAgentKit } from "hedera-agent-kit";
+import * as utils from '../../utils';
 
 const loggerMock = {
   info: jest.fn(),
@@ -36,7 +37,8 @@ beeMock.buyStorage = jest.fn();
 beeMock.extendStorage = jest.fn();
 beeMock.retrieveTag = jest.fn();
 beeMock.deleteTag = jest.fn();
-
+beeMock.makeFeedReader = jest.fn();
+beeMock.makeFeedWriter = jest.fn();
 
 const swarmConfigMock = {
   beeApiUrl: 'http://127.0.0.1:1633',
@@ -59,12 +61,15 @@ jest.mock('../../utils', () => {
     ...originalModule,
     runWithTimeout: jest.fn(),
     getErrorMessage: jest.fn(),
+    getUploadPostageBatchId: jest.fn(),
   };
 });
 
+const mockedUtils = utils as jest.Mocked<typeof utils>;
 
 export {
   beeMock,
   contextMock,
-  swarmConfigMock
+  swarmConfigMock,
+  mockedUtils,
 };
