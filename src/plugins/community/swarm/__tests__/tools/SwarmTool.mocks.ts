@@ -34,6 +34,8 @@ beeMock.getPostageBatch = jest.fn();
 beeMock.getPostageBatches = jest.fn();
 beeMock.buyStorage = jest.fn();
 beeMock.extendStorage = jest.fn();
+beeMock.retrieveTag = jest.fn();
+beeMock.deleteTag = jest.fn();
 
 
 const swarmConfigMock = {
