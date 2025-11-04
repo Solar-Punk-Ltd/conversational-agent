@@ -134,4 +134,36 @@ describe('QueryUploadProgressTool', () => {
       error
     );
   });
+  
+  it('should return 0% progress if total is zero', async () => {
+    const zeroTotalTag = { ...tagDataMock, synced: 0, seen: 0, split: 0 };
+    beeMock.retrieveTag.mockResolvedValue(zeroTotalTag);
+
+    const result = await tool['executeQuery']({ tagId: '1' });
+
+    expect(result).toEqual(
+      getResponseWithStructuredContent({
+        processedPercentage: 0,
+        message: 'Upload progress: 0% processed',
+        startedAt: zeroTotalTag.startedAt,
+        tagAddress: zeroTotalTag.address,
+      })
+    );
+  });
+
+  it('should return 0% progress if nothing has been processed', async () => {
+    const zeroProcessedTag = { ...tagDataMock, synced: 0, seen: 0, split: 100 };
+    beeMock.retrieveTag.mockResolvedValue(zeroProcessedTag);
+
+    const result = await tool['executeQuery']({ tagId: '1' });
+
+    expect(result).toEqual(
+      getResponseWithStructuredContent({
+        processedPercentage: 0,
+        message: 'Upload progress: 0% processed',
+        startedAt: zeroProcessedTag.startedAt,
+        tagAddress: zeroProcessedTag.address,
+      })
+    );
+  });
 });
