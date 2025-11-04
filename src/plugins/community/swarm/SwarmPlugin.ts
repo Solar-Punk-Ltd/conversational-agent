@@ -4,8 +4,8 @@ import {
   type HederaAgentKit,
   type HederaTool,
 } from "hedera-agent-kit";
-import { ListPostageStampsTool } from "./tools/ListPostageStampsTool";
 import { Bee } from "@ethersphere/bee-js";
+import { ListPostageStampsTool } from "./tools/ListPostageStampsTool";
 import { UploadDataTool } from "./tools/UploadDataTool";
 import { DownloadDataTool } from "./tools/DownloadDataTool";
 import { CreatePostageStampTool } from "./tools/CreatePostageStampTool";
