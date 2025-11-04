@@ -33,6 +33,7 @@ let beeMock: jest.Mocked<Bee> = new Bee("http://127.0.0.1:1633") as jest.Mocked<
 beeMock.getPostageBatch = jest.fn();
 beeMock.getPostageBatches = jest.fn();
 beeMock.buyStorage = jest.fn();
+beeMock.extendStorage = jest.fn();
 
 
 const swarmConfigMock = {
