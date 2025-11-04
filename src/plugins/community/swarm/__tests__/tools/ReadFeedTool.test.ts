@@ -1,10 +1,8 @@
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import './SwarmTool.mocks';
-import crypto from 'crypto';
-import { Wallet } from '@ethereumjs/wallet';
 import { ReadFeedTool } from '../../tools/ReadFeedTool';
 import { beeMock, contextMock, swarmConfigMock } from './SwarmTool.mocks';
-import { hexToBytes, getErrorMessage, errorHasStatus, getResponseWithStructuredContent } from '../../utils';
+import { getErrorMessage, getResponseWithStructuredContent } from '../../utils';
 import { BAD_REQUEST_STATUS } from '../../constants';
 import { HederaAgentKit } from 'hedera-agent-kit';
 

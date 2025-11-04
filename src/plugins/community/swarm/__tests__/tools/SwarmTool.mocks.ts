@@ -17,28 +17,17 @@ jest.mock('hedera-agent-kit', () => ({
   },
 }));
 
-// jest.mock('@ethersphere/bee-js', () => ({
-//   Bee: class {
-//     getPostageBatch = jest.fn();
-//   },
-// }));
-
-// jest.mock('../../utils', () => ({
-//   errorHasStatus: jest.fn(),
-//   getBatchSummary: jest.fn(),
-//   getResponseWithStructuredContent: jest.fn((content) => content),
-//   ToolResponse: {},
-// }));
-
 let beeMock: jest.Mocked<Bee> = new Bee("http://127.0.0.1:1633") as jest.Mocked<Bee>;
 beeMock.getPostageBatch = jest.fn();
 beeMock.getPostageBatches = jest.fn();
 beeMock.buyStorage = jest.fn();
 beeMock.extendStorage = jest.fn();
+beeMock.createTag = jest.fn();
 beeMock.retrieveTag = jest.fn();
 beeMock.deleteTag = jest.fn();
 beeMock.makeFeedReader = jest.fn();
 beeMock.makeFeedWriter = jest.fn();
+beeMock.uploadFilesFromDirectory = jest.fn();
 
 const swarmConfigMock = {
   beeApiUrl: 'http://127.0.0.1:1633',

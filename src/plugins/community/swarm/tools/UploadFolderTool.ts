@@ -59,11 +59,6 @@ export class UploadFolderTool extends BaseHederaQueryTool<typeof UploadFolderSch
       throw new Error('Missing required parameter: folderPath.');
     }
 
-    // // Check if in stdio mode for folder path uploads
-    // if (!(transport instanceof StdioServerTransport)) {
-    //   return "Folder path uploads are only supported in stdio mode.";
-    // }
-
     // Check if folder exists
     const stats = await promisify(fs.stat)(folderPath);
     if (!stats.isDirectory()) {
@@ -104,6 +99,7 @@ export class UploadFolderTool extends BaseHederaQueryTool<typeof UploadFolderSch
     let message = 'Folder successfully uploaded to Swarm';
 
     let tagId: string | undefined = undefined;
+
     if (deferred) {
       try {
         const tag = await this.bee.createTag();
