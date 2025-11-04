@@ -1,12 +1,12 @@
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import './SwarmTool.mocks';
-
 import { GetPostageStampTool } from '../../tools/GetPostageStampTool';
 import { GATEWAY_STAMP_ERROR_MESSAGE, NOT_FOUND_STATUS } from '../../constants';
 import type { HederaAgentKit } from 'hedera-agent-kit';
 import { beeMock, contextMock, swarmConfigMock } from './SwarmTool.mocks';
 import { Duration, PostageBatch, Size } from '@ethersphere/bee-js';
 import { PostageBatchCurated, PostageBatchSummary, ResponseContent } from '../../model';
+import { ToolResponse } from '../../utils';
 
 describe('GetPostageStampTool', () => {
   let tool: GetPostageStampTool;

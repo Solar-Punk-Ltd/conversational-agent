@@ -31,6 +31,7 @@ jest.mock('hedera-agent-kit', () => ({
 
 let beeMock: jest.Mocked<Bee> = new Bee("http://127.0.0.1:1633") as jest.Mocked<Bee>;
 beeMock.getPostageBatch = jest.fn();
+beeMock.getPostageBatches = jest.fn();
 
 
 const swarmConfigMock = {
