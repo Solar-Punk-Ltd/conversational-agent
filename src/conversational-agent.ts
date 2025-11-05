@@ -734,11 +734,7 @@ export class ConversationalAgent {
    * @returns Array of plugins to initialize with the agent
    */
   private preparePlugins(): BasePlugin[] {
-    const {
-      additionalPlugins = [],
-      enabledPlugins,
-      disabledPlugins,
-    } = this.options;
+    const { additionalPlugins = [], enabledPlugins, disabledPlugins } = this.options;
 
     const standardPlugins: BasePlugin[] = [
       this.hcs10Plugin,
@@ -761,12 +757,9 @@ export class ConversationalAgent {
       pluginPool = pluginPool.filter((plugin) => !disabledSet.has(plugin.id));
     }
 
-    const additional =
-      disabledPlugins && disabledPlugins.length > 0
-        ? additionalPlugins.filter(
-            (plugin) => !disabledPlugins.includes(plugin.id)
-          )
-        : additionalPlugins;
+    const additional = disabledPlugins && disabledPlugins.length > 0
+      ? additionalPlugins.filter((plugin) => !disabledPlugins.includes(plugin.id))
+      : additionalPlugins;
 
     return [...pluginPool, ...additional];
   }
@@ -795,7 +788,7 @@ export class ConversationalAgent {
       disableLogging,
       accountId = '',
     } = this.options;
-    
+
     return {
       framework: 'langchain',
       signer,
@@ -1068,7 +1061,7 @@ export class ConversationalAgent {
       }
       if (typeof response === 'string') {
         const match = response.match(
-          /transaction[\s\w]*ID[\s:']*([0-9a-fA-F@._-]+)/i
+          /transaction[\s\w]*ID[\s:"]*([0-9a-fA-F@._-]+)/i
         );
         return match ? match[1] : undefined;
       }

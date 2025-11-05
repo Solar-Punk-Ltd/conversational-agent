@@ -16,7 +16,7 @@ import {
   HederaAgentKit,
   TokenUsageCallbackHandler,
 } from 'hedera-agent-kit';
-import type { TokenUsage, CostCalculation, BasePlugin } from 'hedera-agent-kit';
+import type { TokenUsage, CostCalculation } from 'hedera-agent-kit';
 import {
   BaseAgent,
   type ConversationContext,
