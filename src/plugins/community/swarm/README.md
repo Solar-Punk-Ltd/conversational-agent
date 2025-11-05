@@ -160,7 +160,7 @@ Downloads immutable data from a Swarm content address hash.
 **Sample prompt:**
 
 ```bash
-Please download from Swarm: 0cd17d822944c536c9955c15da5cb1b11b8dda339de4700d5821dd491ab07271.
+Please download data from Swarm: 76d133e2798d2b15db55b6c3de01303acd86e43998eab372e25c5a2115bf3f0b.
 ```
 
 
@@ -228,7 +228,7 @@ Upload a folder to Swarm.
 **Sample prompt:**
 
 ```bash
-Please upload to Swarm folder: uploads.
+Please upload to Swarm folder: /home/conversational-agent-client/uploads.
 ```
 
 
@@ -245,7 +245,7 @@ Download folder, files from a Swarm reference and save to file path or return fi
 **Sample prompt:**
 
 ```bash
-Please download from Swarm the file with reference 7547a32aebdc15d9c56c50016622fcef8ad33d6e0075de9966ec96de589fdc32 to folder downloads.
+Please download from Swarm the file with reference ba35af06601ddf5ac3d71ee33da0db7537215a914fd6a5414b5597bb3d618bdb to folder downloads.
 ```
 
 
