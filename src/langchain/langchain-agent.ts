@@ -24,7 +24,6 @@ import {
   type OperationalMode,
   type UsageStats,
 } from '../base-agent';
-import { SwarmPlugin } from '../plugins/community/swarm';
 import { MCPClientManager } from '../mcp/mcp-client-manager';
 import { convertMCPToolToLangChain } from '../mcp/adapters/langchain';
 import { SmartMemoryManager } from '../memory/smart-memory-manager';

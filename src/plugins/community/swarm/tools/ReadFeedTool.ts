@@ -16,7 +16,7 @@ export class ReadFeedTool extends BaseHederaQueryTool<typeof ReadFeedSchema> {
   name = "swarm-read-feed";
   description = `Retrieve the latest data from the feed of a given topic.
     memoryTopic: Feed topic.
-    owner: when accessing external memory or feed, ethereum address of the owner must be set.
+    owner: When accessing external memory or feed, ethereum address of the owner must be set.
   `;
   namespace = "swarm";
   specificInputSchema = ReadFeedSchema;

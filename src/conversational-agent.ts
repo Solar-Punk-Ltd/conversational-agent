@@ -27,7 +27,6 @@ import {
 } from '@hashgraphonline/standards-agent-kit';
 import { HbarPlugin } from './plugins/hbar/HbarPlugin';
 import { WebBrowserPlugin } from './plugins/web-browser/WebBrowserPlugin';
-import { SwarmPlugin } from './plugins/community/swarm/SwarmPlugin';
 import { OpenConvaiState } from '@hashgraphonline/standards-agent-kit';
 import type { IStateManager } from '@hashgraphonline/standards-agent-kit';
 import { getSystemMessage } from './config/system-message';
@@ -44,7 +43,6 @@ import { ParameterService } from './services/parameter-service';
 import { FormatConverterRegistry } from './services/formatters/format-converter-registry';
 import { TopicIdToHrlConverter } from './services/formatters/converters/topic-id-to-hrl-converter';
 import { StringNormalizationConverter } from './services/formatters/converters/string-normalization-converter';
-import { SwarmConfig } from './plugins/community/swarm';
 
 export type ToolDescriptor = {
   name: string;
@@ -84,7 +82,6 @@ export interface ConversationalAgentOptions {
   stateManager?: IStateManager;
   scheduleUserTransactionsInBytesMode?: boolean;
   mirrorNodeConfig?: MirrorNodeConfig;
-  swarmConfig?: SwarmConfig;
   disableLogging?: boolean;
   enabledPlugins?: string[];
   disabledPlugins?: string[];
@@ -139,7 +136,6 @@ export class ConversationalAgent {
   public inscribePlugin: InscribePlugin;
   public hbarPlugin: HbarPlugin;
   public webBrowserPlugin: WebBrowserPlugin;
-  public swarmPlugin: SwarmPlugin;
   public stateManager: IStateManager;
   private options: ConversationalAgentOptions;
   public logger: Logger;
@@ -158,7 +154,6 @@ export class ConversationalAgent {
     this.inscribePlugin = new InscribePlugin();
     this.hbarPlugin = new HbarPlugin();
     this.webBrowserPlugin = new WebBrowserPlugin();
-    this.swarmPlugin = new SwarmPlugin(options.swarmConfig);
     this.logger = new Logger({
       module: 'ConversationalAgent',
       silent: options.disableLogging || false,
@@ -753,10 +748,8 @@ export class ConversationalAgent {
     ];
     standardPlugins.push(this.webBrowserPlugin);
 
-    const communityPlugins: BasePlugin[] = [this.swarmPlugin];
-
     const corePlugins = getAllHederaCorePlugins();
-    let pluginPool = [...standardPlugins, ...communityPlugins, ...corePlugins];
+    let pluginPool = [...standardPlugins, ...corePlugins];
 
     if (enabledPlugins) {
       const enabledSet = new Set(enabledPlugins);
@@ -801,7 +794,6 @@ export class ConversationalAgent {
       mirrorNodeConfig,
       disableLogging,
       accountId = '',
-      swarmConfig
     } = this.options;
     
     return {
