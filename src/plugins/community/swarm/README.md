@@ -212,7 +212,7 @@ Upload a file to Swarm.
 **Sample prompt:**
 
 ```bash
-Upload to Swarm the file: uploads/file.txt.
+Upload to Swarm the file: uploads/file.txt with postage batch: 3b3881ac37f936a4023a4562c69f1f138df8c1c24994f7b047514fbcbe9388fa.
 ```
 
 
